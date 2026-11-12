@@ -1,0 +1,19 @@
+{
+  "projectName": "All India Lake Monitoring System (AILMS)",
+  "totalLakesMonitored": 55,
+  "regions": ["North", "South", "West", "East", "Central", "Northeast"],
+  "n8n": {
+    "workflowId": "CL6bCFtadsf0kmLX",
+    "workflowName": "India Lake AI Diagnosis (Groq)",
+    "productionWebhook": "https://supermanxo777.app.n8n.cloud/webhook/india-lake-monitor-ai",
+    "mcpServerUrl": "https://supermanxo777.app.n8n.cloud/mcp-server/http"
+  },
+  "cpcbStandards": {
+    "classB_C": {
+      "ph": { "min": 6.5, "max": 8.5 },
+      "dissolvedOxygen_mgL": { "minSafe": 5.0, "critical": 3.0 },
+      "tds_ppm": { "safeMax": 500, "critical": 1000 },
+      "turbidity_ntu": { "safeMax": 10, "critical": 50 }
+    }
+  }
+}

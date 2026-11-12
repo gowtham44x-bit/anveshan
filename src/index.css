@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ============================================================
+   THEME 1: DEEP HYDRO & SLATE (Recommended for Control Rooms)
+   ============================================================ */
+.theme-hydro {
+  --bg-app: #0B1120;
+  --bg-header: #0d1527;
+  --bg-card: #162032;
+  --bg-subcard: #101826;
+  --bg-glass: rgba(22, 32, 50, 0.94);
+  --border-color: #26354D;
+  --border-subtle: rgba(38, 53, 77, 0.7);
+  --primary-brand: #0EA5E9;
+  --primary-hover: #0284C7;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --status-good: #10B981;
+  --status-acceptable: #F59E0B;
+  --status-warning: #F97316;
+  --status-unacceptable: #EF4444;
+  --scroll-track: #0B1120;
+  --scroll-thumb: #0EA5E9;
+}
+
+/* ============================================================
+   THEME 2: CLEAN SCIENTIFIC LIGHT (Best for Field & Daytime Use)
+   ============================================================ */
+.theme-light {
+  --bg-app: #F1F5F9;
+  --bg-header: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-subcard: #F8FAFC;
+  --bg-glass: rgba(255, 255, 255, 0.96);
+  --border-color: #CBD5E1;
+  --border-subtle: #E2E8F0;
+  --primary-brand: #0284C7;
+  --primary-hover: #0369A1;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #64748B;
+  --status-good: #059669;
+  --status-acceptable: #D97706;
+  --status-warning: #EA580C;
+  --status-unacceptable: #DC2626;
+  --scroll-track: #E2E8F0;
+  --scroll-thumb: #0284C7;
+}
+
+/* ============================================================
+   THEME 3: ECO-TELEMETRY DARK (High-Contrast Modern SaaS)
+   ============================================================ */
+.theme-eco {
+  --bg-app: #121417;
+  --bg-header: #181B20;
+  --bg-card: #1C2026;
+  --bg-subcard: #15181D;
+  --bg-glass: rgba(28, 32, 38, 0.94);
+  --border-color: #2E343D;
+  --border-subtle: rgba(46, 52, 61, 0.7);
+  --primary-brand: #14B8A6;
+  --primary-hover: #0D9488;
+  --text-primary: #F3F4F6;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --status-good: #10B981;
+  --status-acceptable: #F59E0B;
+  --status-warning: #F97316;
+  --status-unacceptable: #EF4444;
+  --scroll-track: #121417;
+  --scroll-thumb: #14B8A6;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 3px;
+}
+
+.themed-card {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+.themed-subcard {
+  background-color: var(--bg-subcard);
+  border-color: var(--border-subtle);
+}
+.themed-header {
+  background-color: var(--bg-header);
+  border-color: var(--border-color);
+}
+.themed-border {
+  border-color: var(--border-color);
+}
+.themed-glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-color);
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--primary-brand) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5) !important;
+}
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+}
+
+.btn-brand {
+  background-color: var(--primary-brand);
+  color: #FFFFFF;
+}
+.btn-brand:hover {
+  background-color: var(--primary-hover);
+}

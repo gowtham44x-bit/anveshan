@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en" class="theme-hydro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All India Lake Monitoring System (AILMS) • Official Release</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Leaflet CSS & JS for Google Earth Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Chart.js for Historical Trends -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    
+    /* ============================================================
+       THEME 1: DEEP HYDRO & SLATE (Recommended for Control Rooms)
+       ============================================================ */
+    .theme-hydro {
+      --bg-app: #0B1120;
+      --bg-header: #0d1527;
+      --bg-card: #162032;
+      --bg-subcard: #101826;
+      --bg-glass: rgba(22, 32, 50, 0.94);
+      --border-color: #26354D;
+      --border-subtle: rgba(38, 53, 77, 0.7);
+      --primary-brand: #0EA5E9;
+      --primary-hover: #0284C7;
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --status-good: #10B981;
+      --status-acceptable: #F59E0B;
+      --status-warning: #F97316;
+      --status-unacceptable: #EF4444;
+      --scroll-track: #0B1120;
+      --scroll-thumb: #0EA5E9;
+    }
+
+    /* ============================================================
+       THEME 2: CLEAN SCIENTIFIC LIGHT (Best for Field & Daytime Use)
+       ============================================================ */
+    .theme-light {
+      --bg-app: #F1F5F9;
+      --bg-header: #FFFFFF;
+      --bg-card: #FFFFFF;
+      --bg-subcard: #F8FAFC;
+      --bg-glass: rgba(255, 255, 255, 0.96);
+      --border-color: #CBD5E1;
+      --border-subtle: #E2E8F0;
+      --primary-brand: #0284C7;
+      --primary-hover: #0369A1;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #64748B;
+      --status-good: #059669;
+      --status-acceptable: #D97706;
+      --status-warning: #EA580C;
+      --status-unacceptable: #DC2626;
+      --scroll-track: #E2E8F0;
+      --scroll-thumb: #0284C7;
+    }
+
+    /* ============================================================
+       THEME 3: ECO-TELEMETRY DARK (High-Contrast Modern SaaS)
+       ============================================================ */
+    .theme-eco {
+      --bg-app: #121417;
+      --bg-header: #181B20;
+      --bg-card: #1C2026;
+      --bg-subcard: #15181D;
+      --bg-glass: rgba(28, 32, 38, 0.94);
+      --border-color: #2E343D;
+      --border-subtle: rgba(46, 52, 61, 0.7);
+      --primary-brand: #14B8A6;
+      --primary-hover: #0D9488;
+      --text-primary: #F3F4F6;
+      --text-secondary: #9CA3AF;
+      --text-muted: #6B7280;
+      --status-good: #10B981;
+      --status-acceptable: #F59E0B;
+      --status-warning: #F97316;
+      --status-unacceptable: #EF4444;
+      --scroll-track: #121417;
+      --scroll-thumb: #14B8A6;
+    }
+
+    /* Dynamic UI Bindings */
+    body {
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--scroll-track); }
+    ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 3px; }
+    
+    .themed-card {
+      background-color: var(--bg-card);
+      border-color: var(--border-color);
+      color: var(--text-primary);
+    }
+    .themed-subcard {
+      background-color: var(--bg-subcard);
+      border-color: var(--border-subtle);
+    }
+    .themed-header {
+      background-color: var(--bg-header);
+      border-color: var(--border-color);
+    }
+    .themed-border {
+      border-color: var(--border-color);
+    }
+    .themed-glass {
+      background: var(--bg-glass);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-color);
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-card) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--primary-brand) !important;
+      border-radius: 12px !important;
+      box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5) !important;
+    }
+    .leaflet-popup-tip { background: var(--bg-card) !important; }
+
+    .btn-brand {
+      background-color: var(--primary-brand);
+      color: #FFFFFF;
+    }
+    .btn-brand:hover {
+      background-color: var(--primary-hover);
+    }
+  </style>
+</head>
+<body class="font-sans antialiased h-screen w-screen overflow-hidden flex flex-col">
+
+  <!-- TOP CIVIC NAVBAR -->
+  <header class="h-14 themed-header border-b px-4 flex items-center justify-between z-30 shrink-0 shadow-lg">
+    <div class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-lg flex items-center justify-center text-white shadow-inner" style="background-color: var(--primary-brand);">
+        <i class="fa-solid fa-water text-lg"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold tracking-tight flex items-center gap-2" style="color: var(--text-primary);">
+            ALL INDIA LAKE MONITORING SYSTEM
+            <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase tracking-wider" style="background-color: var(--bg-card); color: var(--primary-brand); border: 1px solid var(--border-color);">
+              Official Release v1.0
+            </span>
+          </h1>
+        </div>
+        <p class="text-[11px] flex items-center gap-2" style="color: var(--text-secondary);">
+          <span>CPCB Standards • 55 National Lakes + PWD Citizen Stations</span>
+          <span>•</span>
+          <span class="text-amber-500 font-semibold tracking-wider flex items-center gap-1">
+            <i class="fa-solid fa-circle-exclamation text-[10px]"></i> DEMO STREAM (SYNTHETIC)
+          </span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Center Navigation Tabs -->
+    <div class="hidden md:flex items-center p-1 rounded-lg border themed-border themed-subcard">
+      <button onclick="switchTab('map-view')" id="tab-map-view" class="px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 btn-brand shadow">
+        <i class="fa-solid fa-earth-asia"></i> Geospatial Map
+      </button>
+      <button onclick="switchTab('directory-view')" id="tab-directory-view" class="px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 hover:opacity-100" style="color: var(--text-secondary);">
+        <i class="fa-solid fa-table-list"></i> 55 Lakes Directory
+      </button>
+      <button onclick="switchTab('pwd-view')" id="tab-pwd-view" class="px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 hover:opacity-100" style="color: var(--text-secondary);">
+        <i class="fa-solid fa-users-viewfinder"></i> People's Water Data
+      </button>
+      <button onclick="switchTab('hardware-view')" id="tab-hardware-view" class="px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 hover:opacity-100" style="color: var(--text-secondary);">
+        <i class="fa-solid fa-microchip"></i> 10-Part Hardware
+      </button>
+    </div>
+
+    <!-- Right Controls: Theme Switcher & Engine Status -->
+    <div class="flex items-center gap-2.5">
+      <!-- Theme Switcher Selector -->
+      <div class="flex items-center gap-1 p-1 rounded-lg border themed-border themed-subcard text-xs">
+        <span class="text-[10px] uppercase font-bold px-1.5 hidden sm:inline" style="color: var(--text-muted);">Theme:</span>
+        <button onclick="setTheme('hydro')" id="btn-theme-hydro" title="Deep Hydro & Slate (Control Room)" class="px-2 py-1 rounded text-[11px] font-semibold transition flex items-center gap-1" style="background-color: var(--primary-brand); color: #FFF;">
+          <i class="fa-solid fa-tower-observation"></i> <span class="hidden lg:inline">Hydro Control</span>
+        </button>
+        <button onclick="setTheme('light')" id="btn-theme-light" title="Clean Scientific Light (Field/Daytime)" class="px-2 py-1 rounded text-[11px] font-semibold transition flex items-center gap-1" style="color: var(--text-secondary);">
+          <i class="fa-solid fa-sun"></i> <span class="hidden lg:inline">Scientific Light</span>
+        </button>
+        <button onclick="setTheme('eco')" id="btn-theme-eco" title="Eco-Telemetry Dark (Modern SaaS)" class="px-2 py-1 rounded text-[11px] font-semibold transition flex items-center gap-1" style="color: var(--text-secondary);">
+          <i class="fa-solid fa-leaf"></i> <span class="hidden lg:inline">Eco Dark</span>
+        </button>
+      </div>
+
+      <!-- Live n8n Engine Pill -->
+      <div class="hidden xl:flex items-center gap-2 text-xs font-mono px-2.5 py-1.5 rounded-lg border themed-border themed-subcard">
+        <span style="color: var(--text-muted);">n8n AI Engine:</span>
+        <span class="flex items-center gap-1.5 font-bold" style="color: var(--status-good);">
+          <span class="h-2 w-2 rounded-full animate-pulse" style="background-color: var(--status-good);"></span>
+          ONLINE (Groq)
+        </span>
+      </div>
+
+      <!-- Mobile drawer toggle -->
+      <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg border themed-border themed-card" style="color: var(--text-primary);">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN APPLICATION BODY -->
+  <div class="flex-1 relative overflow-hidden flex">
+
+    <!-- ========================================== -->
+    <!-- TAB 1: GEOSPATIAL MAP VIEW                 -->
+    <!-- ========================================== -->
+    <div id="view-map" class="w-full h-full relative flex">
+      <!-- GOOGLE EARTH / SATELLITE MAP CONTAINER -->
+      <div id="map" class="w-full h-full z-0"></div>
+
+      <!-- MAP FLOATING CONTROL & SEARCH BAR (Top Left) -->
+      <div class="absolute top-4 left-4 z-10 themed-glass rounded-xl p-3.5 shadow-2xl max-w-sm w-full sm:w-[360px]">
+        
+        <!-- Search Input -->
+        <div class="relative mb-2.5">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs" style="color: var(--primary-brand);"></i>
+          <input type="text" id="lakeSearchInput" placeholder="Search 55 lakes, states, or citizen stations..." oninput="handleSearch(this.value)" class="w-full rounded-lg pl-8 pr-3 py-1.5 text-xs themed-subcard border themed-border focus:outline-none" style="color: var(--text-primary);">
+        </div>
+
+        <!-- LAYER SELECTOR: IoT Buoys vs People's Water Data -->
+        <div class="p-2.5 rounded-lg border themed-border themed-subcard mb-2.5">
+          <div class="text-[10px] uppercase font-bold mb-1.5 flex justify-between items-center" style="color: var(--text-secondary);">
+            <span>Active Observation Networks</span>
+            <span id="lakeCountBadge" class="font-mono font-bold" style="color: var(--primary-brand);">55 Lakes + 12 PWD</span>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 text-xs font-mono">
+            <label class="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded border themed-border themed-card">
+              <input type="checkbox" id="layerIot" checked onchange="toggleLayer('iot')" class="rounded accent-sky-500">
+              <span class="text-[11px]" style="color: var(--text-primary);">IoT Buoy Nodes</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded border themed-border themed-card">
+              <input type="checkbox" id="layerPwd" checked onchange="toggleLayer('pwd')" class="rounded accent-sky-500">
+              <span class="text-[11px]" style="color: var(--primary-brand);">PWD Citizen</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Region Chips -->
+        <div class="flex items-center justify-between gap-1 mb-2">
+          <span class="text-[10px] font-semibold uppercase tracking-wider" style="color: var(--text-secondary);">Regions:</span>
+          <div class="flex flex-wrap gap-1 text-[10px]">
+            <button onclick="filterByRegion('all')" id="btn-reg-all" class="px-2 py-0.5 rounded font-bold btn-brand shadow-sm">All</button>
+            <button onclick="filterByRegion('North')" id="btn-reg-North" class="px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">North</button>
+            <button onclick="filterByRegion('South')" id="btn-reg-South" class="px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">South</button>
+            <button onclick="filterByRegion('West')" id="btn-reg-West" class="px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">West</button>
+            <button onclick="filterByRegion('East')" id="btn-reg-East" class="px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">East</button>
+            <button onclick="filterByRegion('Northeast')" id="btn-reg-Northeast" class="px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">NE</button>
+            <button onclick="filterByRegion('Central')" id="btn-reg-Central" class="px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">Central</button>
+          </div>
+        </div>
+
+        <!-- Earth Base Layer Toggle -->
+        <div class="flex items-center justify-between pt-2 border-t themed-border text-[10px]">
+          <span class="font-medium" style="color: var(--text-secondary);">Cartography Base:</span>
+          <div class="flex gap-1">
+            <button onclick="setMapBase('hybrid')" id="btn-base-hybrid" class="px-2 py-0.5 rounded font-medium btn-brand shadow-sm">Google Hybrid</button>
+            <button onclick="setMapBase('satellite')" id="btn-base-satellite" class="px-2 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">Satellite</button>
+            <button onclick="setMapBase('dark')" id="btn-base-dark" class="px-2 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100" style="color: var(--text-secondary);">Dark Canvas</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAP LEGEND (Bottom Left) -->
+      <div class="absolute bottom-6 left-4 z-10 themed-glass rounded-xl p-3 shadow-xl hidden sm:block">
+        <div class="text-[10px] font-semibold uppercase tracking-wider mb-1.5 flex justify-between" style="color: var(--text-secondary);">
+          <span>Standardized CPCB & PWD Quality</span>
+          <span class="text-[9px] font-mono font-bold" style="color: var(--primary-brand);">National Norms</span>
+        </div>
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
+          <div class="flex items-center gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full" style="background-color: var(--status-good);"></span>
+            <span style="color: var(--text-primary);">Desirable / Good</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full" style="background-color: var(--status-acceptable);"></span>
+            <span style="color: var(--text-primary);">Acceptable</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full" style="background-color: var(--status-warning);"></span>
+            <span style="color: var(--text-primary);">Poor / Warning</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full" style="background-color: var(--status-unacceptable);"></span>
+            <span style="color: var(--text-primary);">Unacceptable</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SELECTED LAKE DETAILS & AI DIAGNOSTIC PANEL (Right Floating Drawer) -->
+      <div id="sidePanel" class="absolute top-0 right-0 bottom-0 w-full sm:w-[470px] themed-glass z-20 border-l themed-border flex flex-col shadow-2xl transition-transform duration-300 translate-x-0">
+        
+        <!-- Panel Header -->
+        <div class="p-4 border-b themed-border flex items-start justify-between themed-header">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span id="panelStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold font-mono tracking-wider">
+                CRITICAL
+              </span>
+              <span id="panelSourceBadge" class="text-[10px] font-mono px-1.5 py-0.5 rounded border themed-border themed-subcard" style="color: var(--primary-brand);">
+                IoT Buoy Node
+              </span>
+            </div>
+            <h2 id="panelLakeName" class="text-lg font-bold tracking-tight" style="color: var(--text-primary);">Bellandur Lake</h2>
+            <p id="panelLocation" class="text-xs flex items-center gap-1.5 mt-0.5" style="color: var(--text-secondary);">
+              <i class="fa-solid fa-location-dot" style="color: var(--primary-brand);"></i> Bengaluru, Karnataka
+            </p>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] uppercase font-mono" style="color: var(--text-muted);">Water Index</div>
+            <div id="panelScore" class="text-2xl font-black font-mono">25<span class="text-xs font-normal" style="color: var(--text-muted);">/100</span></div>
+          </div>
+        </div>
+
+        <!-- Scrollable Details Content -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          
+          <!-- Source Metadata Card -->
+          <div id="panelMetaWrap" class="p-2.5 rounded-lg border themed-border themed-subcard text-xs font-mono space-y-1">
+            <div class="flex justify-between text-[11px]">
+              <span style="color: var(--text-muted);">Source Type:</span>
+              <span id="panelMetaSource" class="font-bold" style="color: var(--primary-brand);">Physical Buoy IoT Telemetry</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+              <span style="color: var(--text-muted);">Station / Sample ID:</span>
+              <span id="panelMetaId" class="font-bold" style="color: var(--text-primary);">NODE-KA-BLR-01</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+              <span style="color: var(--text-muted);">Telemetry Timestamp:</span>
+              <span id="panelMetaDate" style="color: var(--text-secondary);">2026-11-12 11:30 IST</span>
+            </div>
+          </div>
+
+          <!-- Live Sensor Chemistry Grid -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5" style="color: var(--text-primary);">
+                <i class="fa-solid fa-flask-vial" style="color: var(--primary-brand);"></i> Water Chemistry Parameters
+              </span>
+              <span class="text-[10px] font-mono text-amber-500 font-bold">SIMULATED STREAM</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+              <!-- DO -->
+              <div class="p-2.5 rounded-lg border themed-border themed-card">
+                <div class="text-[10px] flex justify-between" style="color: var(--text-secondary);">
+                  <span>Dissolved O2 (DO)</span>
+                  <span style="color: var(--text-muted);">&ge;5.0 mg/L</span>
+                </div>
+                <div id="panelDO" class="text-base font-bold mt-1">1.8 mg/L</div>
+                <div id="panelDOMsg" class="text-[9px] mt-0.5" style="color: var(--text-muted);">Critical hypoxia</div>
+              </div>
+              <!-- pH -->
+              <div class="p-2.5 rounded-lg border themed-border themed-card">
+                <div class="text-[10px] flex justify-between" style="color: var(--text-secondary);">
+                  <span>pH Level</span>
+                  <span style="color: var(--text-muted);">6.5–8.5</span>
+                </div>
+                <div id="panelPH" class="text-base font-bold mt-1">8.9</div>
+                <div id="panelPHMsg" class="text-[9px] mt-0.5" style="color: var(--text-muted);">Alkaline violation</div>
+              </div>
+              <!-- TDS -->
+              <div class="p-2.5 rounded-lg border themed-border themed-card">
+                <div class="text-[10px] flex justify-between" style="color: var(--text-secondary);">
+                  <span>TDS</span>
+                  <span style="color: var(--text-muted);">&le;500 ppm</span>
+                </div>
+                <div id="panelTDS" class="text-base font-bold mt-1">850 ppm</div>
+                <div id="panelTDSMsg" class="text-[9px] mt-0.5" style="color: var(--text-muted);">Severe dissolved load</div>
+              </div>
+              <!-- Turbidity -->
+              <div class="p-2.5 rounded-lg border themed-border themed-card">
+                <div class="text-[10px] flex justify-between" style="color: var(--text-secondary);">
+                  <span>Turbidity</span>
+                  <span style="color: var(--text-muted);">&le;10 NTU</span>
+                </div>
+                <div id="panelTurb" class="text-base font-bold mt-1">48 NTU</div>
+                <div id="panelTurbMsg" class="text-[9px] mt-0.5" style="color: var(--text-muted);">High suspended silt</div>
+              </div>
+            </div>
+
+            <div class="mt-2 px-3 py-1.5 rounded-lg border themed-border themed-subcard flex items-center justify-between text-xs font-mono">
+              <span style="color: var(--text-muted);">Water Temperature:</span>
+              <span id="panelTemp" class="font-bold" style="color: var(--text-primary);">29.5 °C</span>
+            </div>
+          </div>
+
+          <!-- History Trend Sparkline/Chart -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5" style="color: var(--text-primary);">
+                <i class="fa-solid fa-chart-line" style="color: var(--primary-brand);"></i> 7-Day Trend (Dissolved O2 mg/L)
+              </span>
+              <span class="text-[10px] font-mono" style="color: var(--text-muted);">Historical Tracking</span>
+            </div>
+            <div class="p-3 rounded-lg border themed-border themed-card h-36">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+
+          <!-- DIAGNOSTIC ENGINE ACTION BUTTON -->
+          <div>
+            <button onclick="triggerN8nDiagnosis()" id="btnRunDiagnosis" class="w-full py-2.5 px-4 rounded-xl font-bold btn-brand shadow-lg transition flex items-center justify-center gap-2 text-xs uppercase tracking-wider">
+              <i class="fa-solid fa-bolt"></i>
+              <span>Trigger n8n Groq AI Diagnosis</span>
+            </button>
+            <p class="text-[10px] text-center mt-1.5" style="color: var(--text-secondary);">
+              Pushes live payload to n8n webhook &rarr; CPCB Rule Engine &rarr; Tavily News &rarr; Groq LLM
+            </p>
+          </div>
+
+          <!-- AI DIAGNOSTIC REPORT RESULTS -->
+          <div id="diagnosisCard" class="rounded-xl p-4 border themed-border themed-card shadow-xl space-y-3">
+            <div class="flex items-center justify-between border-b themed-border pb-2">
+              <span class="text-xs font-bold uppercase tracking-wide flex items-center gap-1.5" style="color: var(--text-primary);">
+                <i class="fa-solid fa-brain" style="color: var(--primary-brand);"></i> Groq AI Diagnosis (Latest Run)
+              </span>
+              <span id="diagTimestamp" class="text-[10px] font-mono" style="color: var(--text-muted);">Ready</span>
+            </div>
+
+            <p id="diagSummary" class="text-xs leading-relaxed font-sans" style="color: var(--text-secondary);">
+              Click the button above to run real-time inference via your connected n8n cloud workflow.
+            </p>
+
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider mb-1" style="color: var(--primary-brand);">Identified Pollution Drivers:</div>
+              <ul id="diagCauses" class="text-xs space-y-1 font-sans" style="color: var(--text-secondary);">
+                <li class="flex items-start gap-1.5"><span style="color: var(--primary-brand);">•</span> High organic effluent and untreated sewage discharge</li>
+              </ul>
+            </div>
+
+            <div>
+              <div class="text-[11px] font-semibold uppercase tracking-wider mb-1.5" style="color: var(--primary-brand);">Action Roadmap (CPCB Norms):</div>
+              <div class="grid grid-cols-3 gap-1.5 text-[10px]">
+                <div class="p-2 rounded border themed-border themed-subcard">
+                  <div class="font-bold uppercase" style="color: var(--status-unacceptable);">Immediate</div>
+                  <div id="diagActImm" class="mt-1" style="color: var(--text-secondary);">Activate aerator cascades</div>
+                </div>
+                <div class="p-2 rounded border themed-border themed-subcard">
+                  <div class="font-bold uppercase" style="color: var(--status-acceptable);">Short Term</div>
+                  <div id="diagActShort" class="mt-1" style="color: var(--text-secondary);">Plug untreated storm inlets</div>
+                </div>
+                <div class="p-2 rounded border themed-border themed-subcard">
+                  <div class="font-bold uppercase" style="color: var(--status-good);">Long Term</div>
+                  <div id="diagActLong" class="mt-1" style="color: var(--text-secondary);">Construct wetland buffer</div>
+                </div>
+              </div>
+            </div>
+
+            <div id="diagNotifyWrap" class="p-2.5 rounded-lg border themed-border text-xs" style="background-color: rgba(239, 68, 68, 0.08);">
+              <span class="font-semibold" style="color: var(--status-unacceptable);">Regulatory Authorities to Notify:</span>
+              <div id="diagNotify" class="mt-0.5 text-[11px]" style="color: var(--text-primary);">State Pollution Control Board & Local Municipal Body</div>
+            </div>
+
+            <!-- Tavily News Evidence -->
+            <div id="diagNewsWrap" class="hidden p-2.5 rounded-lg border themed-border text-xs themed-subcard">
+              <span class="font-semibold flex items-center gap-1.5 mb-1" style="color: var(--primary-brand);">
+                <i class="fa-solid fa-newspaper"></i> Local News & Evidence (Tavily Scraper):
+              </span>
+              <ul id="diagNewsList" class="text-[11px] space-y-1" style="color: var(--text-secondary);"></ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 2: ALL-INDIA DIRECTORY (55 LAKES)      -->
+    <!-- ========================================== -->
+    <div id="view-directory" class="w-full h-full p-6 overflow-y-auto hidden">
+      <div class="max-w-6xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b themed-border gap-3">
+          <div>
+            <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--text-primary);">
+              <i class="fa-solid fa-table-list" style="color: var(--primary-brand);"></i>
+              All-India Lake Telemetry Directory (55 Monitored Lakes)
+            </h2>
+            <p class="text-xs mt-1" style="color: var(--text-secondary);">
+              Comprehensive national water quality index across all Indian ecological zones.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 rounded border text-xs font-mono font-bold" style="background-color: rgba(239, 68, 68, 0.15); color: var(--status-unacceptable); border-color: var(--status-unacceptable);">14 Critical</span>
+            <span class="px-2.5 py-1 rounded border text-xs font-mono font-bold" style="background-color: rgba(249, 115, 22, 0.15); color: var(--status-warning); border-color: var(--status-warning);">23 Warning</span>
+            <span class="px-2.5 py-1 rounded border text-xs font-mono font-bold" style="background-color: rgba(16, 185, 129, 0.15); color: var(--status-good); border-color: var(--status-good);">18 Good</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl border themed-border themed-card overflow-hidden shadow-xl">
+          <div class="overflow-x-auto max-h-[70vh]">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="themed-header uppercase tracking-wider text-[10px] sticky top-0 border-b themed-border" style="color: var(--text-secondary);">
+                <tr>
+                  <th class="p-3">Lake Name</th>
+                  <th class="p-3">State / Region</th>
+                  <th class="p-3">Ecological Type</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3">Score</th>
+                  <th class="p-3">DO (mg/L)</th>
+                  <th class="p-3">pH</th>
+                  <th class="p-3">TDS (ppm)</th>
+                  <th class="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="directoryTableBody" class="divide-y themed-border" style="color: var(--text-primary);"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 3: PEOPLE'S WATER DATA (PWD) TAB       -->
+    <!-- ========================================== -->
+    <div id="view-pwd" class="w-full h-full p-6 overflow-y-auto hidden">
+      <div class="max-w-5xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b themed-border gap-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs px-2 py-0.5 rounded font-mono font-bold" style="background-color: var(--bg-card); color: var(--primary-brand); border: 1px solid var(--border-color);">
+                CITIZEN SCIENCE PARTNERSHIP
+              </span>
+            </div>
+            <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--text-primary);">
+              <i class="fa-solid fa-users-viewfinder" style="color: var(--primary-brand);"></i>
+              People's Water Data (IIT Madras • TAU • ICCW • KMCH)
+            </h2>
+            <p class="text-xs mt-1" style="color: var(--text-secondary);">
+              Community environmental water sampling scraped via Firecrawl API from <a href="https://peopleswaterdata.org" target="_blank" class="underline" style="color: var(--primary-brand);">peopleswaterdata.org</a>.
+            </p>
+          </div>
+          <button onclick="rescrapePwd()" id="btnScrapePwd" class="px-3 py-1.5 rounded-lg btn-brand text-xs font-medium flex items-center gap-2 shadow">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh via Firecrawl
+          </button>
+        </div>
+
+        <!-- 4 Tiers of PWD with User-Specified Standardized Colors -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="p-3 rounded-xl border themed-border themed-card">
+            <div class="flex items-center gap-2 font-bold mb-1" style="color: var(--status-good);">
+              <span class="h-3 w-3 rounded-full" style="background-color: var(--status-good);"></span> Desirable
+            </div>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Safe for drinking and direct aquatic contact.</p>
+          </div>
+          <div class="p-3 rounded-xl border themed-border themed-card">
+            <div class="flex items-center gap-2 font-bold mb-1" style="color: var(--status-acceptable);">
+              <span class="h-3 w-3 rounded-full" style="background-color: var(--status-acceptable);"></span> Acceptable
+            </div>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Meets secondary standard; suitable for irrigation and fisheries.</p>
+          </div>
+          <div class="p-3 rounded-xl border themed-border themed-card">
+            <div class="flex items-center gap-2 font-bold mb-1" style="color: var(--status-warning);">
+              <span class="h-3 w-3 rounded-full" style="background-color: var(--status-warning);"></span> Poor
+            </div>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Elevated TDS/turbidity; requires municipal treatment.</p>
+          </div>
+          <div class="p-3 rounded-xl border themed-border themed-card">
+            <div class="flex items-center gap-2 font-bold mb-1" style="color: var(--status-unacceptable);">
+              <span class="h-3 w-3 rounded-full" style="background-color: var(--status-unacceptable);"></span> Unacceptable
+            </div>
+            <p class="text-[11px]" style="color: var(--text-secondary);">Severe contamination; dangerous hypoxia or toxic effluents.</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-bold uppercase tracking-wider mb-3 flex items-center gap-2" style="color: var(--text-primary);">
+            <i class="fa-solid fa-vial-circle-check" style="color: var(--primary-brand);"></i> Active Citizen Water Samples Across India
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="pwdSamplesList"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- TAB 4: 10-PART HARDWARE HEALTH INVENTORY   -->
+    <!-- ========================================== -->
+    <div id="view-hardware" class="w-full h-full p-6 overflow-y-auto hidden">
+      <div class="max-w-6xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between pb-4 border-b themed-border gap-3">
+          <div>
+            <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--text-primary);">
+              <i class="fa-solid fa-microchip" style="color: var(--primary-brand);"></i>
+              10-Part Off-Grid Buoy Hardware Inventory
+            </h2>
+            <p class="text-xs mt-1" style="color: var(--text-secondary);">
+              Active telemetry & physical diagnostic health of IoT components across deployed buoy nodes.
+            </p>
+          </div>
+          <div class="px-3 py-1 rounded-full text-xs font-mono border themed-border themed-card flex items-center gap-2" style="color: var(--status-acceptable);">
+            <span class="h-2 w-2 rounded-full animate-pulse" style="background-color: var(--status-acceptable);"></span>
+            ALL READINGS SIMULATED (DEMO MODE)
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="hardwareGrid"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC & COMPREHENSIVE 55 LAKES -->
+  <script>
+    const N8N_WEBHOOK_URL = "https://supermanxo777.app.n8n.cloud/webhook/india-lake-monitor-ai";
+    let currentTheme = 'hydro';
+
+    // 55 Major Indian Lakes (IoT Fleet)
+    const IOT_LAKES = [
+      // SOUTH
+      { id: "bellandur", name: "Bellandur Lake", location: "Bengaluru, Karnataka", region: "South", type: "Urban Hypereutrophic", source: "buoy", lat: 12.9348, lng: 77.6710, status: "Critical", score: 25, readings: { ph: 8.9, do_mgl: 1.8, tds: 850, turbidity: 48.0, temperature: 29.5 }, sampleId: "NODE-KA-BLR-01", date: "2026-11-12 11:30 IST", causes: ["Untreated sewage discharge", "Toxic surfactant foam", "Nocturnal hypoxia"] },
+      { id: "varthur", name: "Varthur Lake", location: "Bengaluru, Karnataka", region: "South", type: "Cascade Receiving Wetland", source: "buoy", lat: 12.9400, lng: 77.7100, status: "Critical", score: 30, readings: { ph: 8.8, do_mgl: 1.5, tds: 890, turbidity: 52.0, temperature: 29.8 }, sampleId: "NODE-KA-BLR-02", date: "2026-11-12 11:15 IST", causes: ["Bellandur cascade sewage accumulation"] },
+      { id: "ulsoor", name: "Ulsoor Lake", location: "Bengaluru, Karnataka", region: "South", type: "Urban Catchment", source: "buoy", lat: 12.9833, lng: 77.6167, status: "Warning", score: 65, readings: { ph: 8.1, do_mgl: 4.6, tds: 540, turbidity: 18.0, temperature: 27.5 }, sampleId: "NODE-KA-BLR-03", date: "2026-11-12 10:50 IST", causes: ["Stormwater runoff", "Microcystis cyanobacteria bloom"] },
+      { id: "sankey", name: "Sankey Tank", location: "Bengaluru, Karnataka", region: "South", type: "Urban Rain Catchment", source: "buoy", lat: 13.0075, lng: 77.5744, status: "Good", score: 82, readings: { ph: 7.5, do_mgl: 6.2, tds: 310, turbidity: 7.5, temperature: 26.5 }, sampleId: "NODE-KA-BLR-04", date: "2026-11-12 10:20 IST", causes: ["Active aeration fountains"] },
+      { id: "hebbal", name: "Hebbal Lake", location: "Bengaluru, Karnataka", region: "South", type: "Valley Urban Basin", source: "buoy", lat: 13.0450, lng: 77.5890, status: "Warning", score: 61, readings: { ph: 8.3, do_mgl: 4.2, tds: 620, turbidity: 24.0, temperature: 28.0 }, sampleId: "NODE-KA-BLR-05", date: "2026-11-12 09:40 IST", causes: ["Ring Road runoff sediments"] },
+      { id: "agara", name: "Agara Lake", location: "Bengaluru, Karnataka", region: "South", type: "Restored Urban Wetland", source: "buoy", lat: 12.9240, lng: 77.6500, status: "Good", score: 79, readings: { ph: 7.4, do_mgl: 5.9, tds: 360, turbidity: 9.8, temperature: 27.0 }, sampleId: "NODE-KA-BLR-06", date: "2026-11-12 10:05 IST", causes: ["Wetland filter track functional"] },
+      { id: "karanji", name: "Karanji Lake", location: "Mysuru, Karnataka", region: "South", type: "Protected Nature Sanctuary", source: "buoy", lat: 12.3025, lng: 76.6710, status: "Good", score: 86, readings: { ph: 7.3, do_mgl: 6.7, tds: 280, turbidity: 6.0, temperature: 26.0 }, sampleId: "NODE-KA-MYS-01", date: "2026-11-12 09:30 IST", causes: ["Chamundi Hill buffer"] },
+      { id: "kukkarahalli", name: "Kukkarahalli Lake", location: "Mysuru, Karnataka", region: "South", type: "Biodiversity Wetland", source: "buoy", lat: 12.3120, lng: 76.6340, status: "Warning", score: 66, readings: { ph: 8.0, do_mgl: 4.8, tds: 490, turbidity: 17.0, temperature: 27.2 }, sampleId: "NODE-KA-MYS-02", date: "2026-11-12 09:15 IST", causes: ["Siltation in northern feeding bay"] },
+      { id: "hussain", name: "Hussain Sagar", location: "Hyderabad, Telangana", region: "South", type: "Historic Deccan Reservoir", source: "buoy", lat: 17.4239, lng: 78.4738, status: "Warning", score: 58, readings: { ph: 8.2, do_mgl: 3.9, tds: 710, turbidity: 25.0, temperature: 31.0 }, sampleId: "NODE-TS-HYD-01", date: "2026-11-12 10:30 IST", causes: ["Patu Cheruvu industrial nullah inflows"] },
+      { id: "osmansagar", name: "Osman Sagar (Gandipet)", location: "Hyderabad, Telangana", region: "South", type: "Drinking Reservoir", source: "buoy", lat: 17.3800, lng: 78.2900, status: "Good", score: 85, readings: { ph: 7.4, do_mgl: 6.5, tds: 290, turbidity: 7.1, temperature: 28.0 }, sampleId: "NODE-TS-HYD-02", date: "2026-11-12 09:50 IST", causes: ["Musi watershed protection zone"] },
+      { id: "himayatsagar", name: "Himayat Sagar", location: "Hyderabad, Telangana", region: "South", type: "Southern Catchment", source: "buoy", lat: 17.3100, lng: 78.3500, status: "Good", score: 83, readings: { ph: 7.5, do_mgl: 6.3, tds: 320, turbidity: 8.0, temperature: 28.5 }, sampleId: "NODE-TS-HYD-03", date: "2026-11-12 09:40 IST", causes: ["Upstream catchment well preserved"] },
+      { id: "kolleru", name: "Kolleru Lake", location: "Eluru, Andhra Pradesh", region: "South", type: "Inter-deltaic Ramsar", source: "buoy", lat: 16.6500, lng: 81.3333, status: "Critical", score: 45, readings: { ph: 8.6, do_mgl: 3.2, tds: 830, turbidity: 38.0, temperature: 30.5 }, sampleId: "NODE-AP-ELU-01", date: "2026-11-12 10:20 IST", causes: ["Intensive aquaculture fish pond discharges"] },
+      { id: "pulicat", name: "Pulicat Lake", location: "Tirupati / Thiruvallur, AP & TN", region: "South", type: "Brackish Barrier Lagoon", source: "buoy", lat: 13.5833, lng: 80.2000, status: "Warning", score: 67, readings: { ph: 8.1, do_mgl: 5.4, tds: 1050, turbidity: 19.0, temperature: 29.5 }, sampleId: "NODE-TN-PUL-01", date: "2026-11-12 10:40 IST", causes: ["Sea mouth siltation"] },
+      { id: "vembanad", name: "Vembanad Lake", location: "Kottayam / Alappuzha, Kerala", region: "South", type: "Estuarine Ramsar Backwaters", source: "buoy", lat: 9.6000, lng: 76.4000, status: "Warning", score: 64, readings: { ph: 7.6, do_mgl: 4.9, tds: 920, turbidity: 18.0, temperature: 28.5 }, sampleId: "NODE-KL-KOT-01", date: "2026-11-12 10:10 IST", causes: ["Paddy land fertilizer runoff"] },
+      { id: "ashtamudi", name: "Ashtamudi Lake", location: "Kollam, Kerala", region: "South", type: "Eight-Armed Ramsar Estuary", source: "buoy", lat: 8.9500, lng: 76.6000, status: "Good", score: 75, readings: { ph: 7.7, do_mgl: 5.8, tds: 790, turbidity: 12.0, temperature: 28.5 }, sampleId: "NODE-KL-KOL-01", date: "2026-11-12 10:00 IST", causes: ["Mangrove natural bio-filtration"] },
+      { id: "sasthamcotta", name: "Sasthamcotta Lake", location: "Kollam, Kerala", region: "South", type: "Queen of Freshwater (Ramsar)", source: "buoy", lat: 9.0400, lng: 76.6300, status: "Good", score: 88, readings: { ph: 7.1, do_mgl: 7.2, tds: 160, turbidity: 4.2, temperature: 27.5 }, sampleId: "NODE-KL-SAS-01", date: "2026-11-12 09:25 IST", causes: ["Cavitied larva natural purification"] },
+      { id: "chembarambakkam", name: "Chembarambakkam Lake", location: "Chennai, Tamil Nadu", region: "South", type: "Drinking Water Catchment", source: "buoy", lat: 13.0117, lng: 80.0578, status: "Good", score: 89, readings: { ph: 7.3, do_mgl: 6.9, tds: 230, turbidity: 5.4, temperature: 28.0 }, sampleId: "NODE-TN-CHE-01", date: "2026-11-12 10:15 IST", causes: ["Protected Metro Water catchment"] },
+      { id: "puzhal", name: "Red Hills / Puzhal Lake", location: "Chennai, Tamil Nadu", region: "South", type: "Metropolitan Reservoir", source: "buoy", lat: 13.1700, lng: 80.1700, status: "Good", score: 84, readings: { ph: 7.4, do_mgl: 6.4, tds: 260, turbidity: 6.8, temperature: 28.2 }, sampleId: "NODE-TN-CHE-02", date: "2026-11-12 09:55 IST", causes: ["Riparian shoreline buffer"] },
+
+      // NORTH
+      { id: "dal", name: "Dal Lake", location: "Srinagar, Jammu & Kashmir", region: "North", type: "Alpine Urban Waterway", source: "buoy", lat: 34.1200, lng: 74.8700, status: "Warning", score: 70, readings: { ph: 7.1, do_mgl: 7.2, tds: 190, turbidity: 14.5, temperature: 17.5 }, sampleId: "NODE-JK-SRI-01", date: "2026-11-12 09:20 IST", causes: ["Houseboat wastewater", "Azolla weed encroachment"] },
+      { id: "wular", name: "Wular Lake", location: "Bandipora, Jammu & Kashmir", region: "North", type: "Largest Freshwater / Ramsar", source: "buoy", lat: 34.3333, lng: 74.5500, status: "Warning", score: 64, readings: { ph: 7.3, do_mgl: 6.1, tds: 220, turbidity: 24.0, temperature: 16.5 }, sampleId: "NODE-JK-WUL-01", date: "2026-11-12 09:00 IST", causes: ["Siltation from Jhelum river"] },
+      { id: "pangong", name: "Pangong Tso", location: "Leh, Ladakh", region: "North", type: "High-Altitude Endorheic", source: "buoy", lat: 33.7500, lng: 78.6667, status: "Good", score: 93, readings: { ph: 8.2, do_mgl: 8.6, tds: 640, turbidity: 3.1, temperature: 10.5 }, sampleId: "NODE-LA-LEH-01", date: "2026-11-12 08:00 IST", causes: ["Pristine sub-zero alpine meltwater"] },
+      { id: "tsomoriri", name: "Tso Moriri", location: "Changthang, Ladakh", region: "North", type: "High-Altitude Ramsar", source: "buoy", lat: 32.9000, lng: 78.3000, status: "Good", score: 95, readings: { ph: 8.0, do_mgl: 8.8, tds: 480, turbidity: 2.8, temperature: 9.0 }, sampleId: "NODE-LA-CHA-01", date: "2026-11-12 07:45 IST", causes: ["Glacial runoff"] },
+      { id: "nainital", name: "Nainital Lake", location: "Nainital, Uttarakhand", region: "North", type: "Kumaon Tectonic Basin", source: "buoy", lat: 29.3900, lng: 79.4600, status: "Warning", score: 68, readings: { ph: 7.5, do_mgl: 5.6, tds: 290, turbidity: 18.0, temperature: 17.0 }, sampleId: "NODE-UK-NAI-01", date: "2026-11-12 09:15 IST", causes: ["Heavy peak tourism pressure"] },
+      { id: "bhimtal", name: "Bhimtal Lake", location: "Bhimtal, Uttarakhand", region: "North", type: "Kumaon Freshwater", source: "buoy", lat: 29.3500, lng: 79.5600, status: "Good", score: 80, readings: { ph: 7.3, do_mgl: 6.8, tds: 240, turbidity: 8.5, temperature: 18.0 }, sampleId: "NODE-UK-BHI-01", date: "2026-11-12 09:10 IST", causes: ["Managed municipal outflows"] },
+      { id: "sukhna", name: "Sukhna Lake", location: "Chandigarh, UT", region: "North", type: "Shivalik Rainfed Reservoir", source: "buoy", lat: 30.7420, lng: 76.8180, status: "Warning", score: 69, readings: { ph: 7.6, do_mgl: 5.8, tds: 340, turbidity: 21.0, temperature: 22.0 }, sampleId: "NODE-CH-SUK-01", date: "2026-11-12 08:55 IST", causes: ["Shivalik foothills silt deposition"] },
+      { id: "renuka", name: "Renuka Lake", location: "Sirmaur, Himachal Pradesh", region: "North", type: "Freshwater Ramsar Sanctuary", source: "buoy", lat: 30.6050, lng: 77.4500, status: "Good", score: 87, readings: { ph: 7.2, do_mgl: 7.4, tds: 210, turbidity: 5.8, temperature: 19.5 }, sampleId: "NODE-HP-REN-01", date: "2026-11-12 08:40 IST", causes: ["Dense oak forest catchment shield"] },
+      { id: "chandrataal", name: "Chandra Taal", location: "Spiti Valley, Himachal Pradesh", region: "North", type: "Glacial Ramsar", source: "buoy", lat: 32.4830, lng: 77.6170, status: "Good", score: 96, readings: { ph: 7.6, do_mgl: 9.1, tds: 120, turbidity: 1.9, temperature: 7.5 }, sampleId: "NODE-HP-SPI-01", date: "2026-11-12 07:30 IST", causes: ["Unpolluted glaciated scree origin"] },
+      { id: "harike", name: "Harike Wetland", location: "Tarn Taran / Ferozepur, Punjab", region: "North", type: "Beas-Sutlej Confluence Ramsar", source: "buoy", lat: 31.1500, lng: 74.9500, status: "Critical", score: 47, readings: { ph: 8.4, do_mgl: 3.4, tds: 820, turbidity: 41.0, temperature: 24.0 }, sampleId: "NODE-PB-HAR-01", date: "2026-11-12 08:35 IST", causes: ["Buddha Nullah effluent discharge"] },
+      { id: "kanjli", name: "Kanjli Wetland", location: "Kapurthala, Punjab", region: "North", type: "Kali Bein Ramsar", source: "buoy", lat: 31.4200, lng: 75.3600, status: "Warning", score: 62, readings: { ph: 7.8, do_mgl: 4.8, tds: 580, turbidity: 26.0, temperature: 23.5 }, sampleId: "NODE-PB-KAN-01", date: "2026-11-12 08:20 IST", causes: ["Water hyacinth mats"] },
+
+      // WEST
+      { id: "powai", name: "Powai Lake", location: "Mumbai, Maharashtra", region: "West", type: "Urban Catchment", source: "buoy", lat: 19.1258, lng: 72.9056, status: "Good", score: 88, readings: { ph: 7.4, do_mgl: 6.8, tds: 320, turbidity: 6.5, temperature: 27.0 }, sampleId: "NODE-MH-MUM-01", date: "2026-11-12 10:45 IST", causes: ["Perimeter fenced; minimal raw sewage"] },
+      { id: "vihar", name: "Vihar Lake", location: "Mumbai, Maharashtra", region: "West", type: "Protected National Park", source: "buoy", lat: 19.1440, lng: 72.9150, status: "Good", score: 91, readings: { ph: 7.2, do_mgl: 7.2, tds: 180, turbidity: 4.5, temperature: 26.5 }, sampleId: "NODE-MH-MUM-02", date: "2026-11-12 10:35 IST", causes: ["National Park forest cover"] },
+      { id: "tulsi", name: "Tulsi Lake", location: "Mumbai, Maharashtra", region: "West", type: "Forested Drinking Basin", source: "buoy", lat: 19.1800, lng: 72.9200, status: "Good", score: 93, readings: { ph: 7.1, do_mgl: 7.6, tds: 150, turbidity: 3.8, temperature: 25.5 }, sampleId: "NODE-MH-MUM-03", date: "2026-11-12 10:25 IST", causes: ["Dense forested core zone"] },
+      { id: "lonar", name: "Lonar Crater Lake", location: "Buldhana, Maharashtra", region: "West", type: "Basalt Meteor Crater", source: "buoy", lat: 19.9760, lng: 76.5070, status: "Warning", score: 55, readings: { ph: 9.8, do_mgl: 3.9, tds: 1150, turbidity: 34.0, temperature: 28.0 }, sampleId: "NODE-MH-LON-01", date: "2026-11-12 09:40 IST", causes: ["Endorheic hyper-alkaline lake"] },
+      { id: "rankala", name: "Rankala Lake", location: "Kolhapur, Maharashtra", region: "West", type: "Historic Urban Reservoir", source: "buoy", lat: 16.6900, lng: 74.2150, status: "Warning", score: 63, readings: { ph: 7.9, do_mgl: 4.7, tds: 520, turbidity: 22.0, temperature: 27.0 }, sampleId: "NODE-MH-KOL-01", date: "2026-11-12 09:20 IST", causes: ["City wastewater nullahs"] },
+      { id: "pashan", name: "Pashan Lake", location: "Pune, Maharashtra", region: "West", type: "Ramnadi Watershed Lake", source: "buoy", lat: 18.5350, lng: 73.7850, status: "Warning", score: 59, readings: { ph: 8.2, do_mgl: 4.1, tds: 650, turbidity: 28.0, temperature: 28.5 }, sampleId: "NODE-MH-PUN-01", date: "2026-11-12 09:35 IST", causes: ["Ramnadi untreated urban discharge"] },
+      { id: "sambhar", name: "Sambhar Salt Lake", location: "Jaipur / Nagaur, Rajasthan", region: "West", type: "Inland Saline Ramsar", source: "buoy", lat: 26.9000, lng: 75.0000, status: "Warning", score: 52, readings: { ph: 9.4, do_mgl: 4.8, tds: 1420, turbidity: 28.0, temperature: 33.0 }, sampleId: "NODE-RJ-JAI-01", date: "2026-11-12 08:50 IST", causes: ["Evaporative concentration"] },
+      { id: "pichola", name: "Lake Pichola", location: "Udaipur, Rajasthan", region: "West", type: "Historic Urban Reservoir", source: "buoy", lat: 24.5764, lng: 73.6800, status: "Warning", score: 66, readings: { ph: 7.9, do_mgl: 5.1, tds: 490, turbidity: 17.5, temperature: 27.5 }, sampleId: "NODE-RJ-UDA-01", date: "2026-11-12 10:00 IST", causes: ["City wastewater inlets"] },
+      { id: "fatehsagar", name: "Fateh Sagar Lake", location: "Udaipur, Rajasthan", region: "West", type: "Interconnected Urban Lake", source: "buoy", lat: 24.6020, lng: 73.6730, status: "Good", score: 76, readings: { ph: 7.6, do_mgl: 6.0, tds: 390, turbidity: 11.0, temperature: 27.0 }, sampleId: "NODE-RJ-UDA-02", date: "2026-11-12 09:45 IST", causes: ["Solar observatory buffer zone"] },
+      { id: "anasagar", name: "Ana Sagar Lake", location: "Ajmer, Rajasthan", region: "West", type: "Historic Catchment Lake", source: "buoy", lat: 26.4750, lng: 74.6220, status: "Critical", score: 42, readings: { ph: 8.7, do_mgl: 2.8, tds: 940, turbidity: 45.0, temperature: 29.5 }, sampleId: "NODE-RJ-AJM-01", date: "2026-11-12 09:05 IST", causes: ["Bandi river sewage inflow"] },
+      { id: "pushkar", name: "Pushkar Lake", location: "Pushkar, Rajasthan", region: "West", type: "Sacred Semi-Arid Lake", source: "buoy", lat: 26.4880, lng: 74.5530, status: "Warning", score: 63, readings: { ph: 8.1, do_mgl: 4.9, tds: 610, turbidity: 23.0, temperature: 28.5 }, sampleId: "NODE-RJ-PUS-01", date: "2026-11-12 08:40 IST", causes: ["Ritual offerings bio-load"] },
+      { id: "nakki", name: "Nakki Lake", location: "Mount Abu, Rajasthan", region: "West", type: "Hill Station Oasis", source: "buoy", lat: 24.5950, lng: 72.7070, status: "Good", score: 78, readings: { ph: 7.3, do_mgl: 6.3, tds: 320, turbidity: 8.9, temperature: 21.0 }, sampleId: "NODE-RJ-ABU-01", date: "2026-11-12 08:15 IST", causes: ["Eco-sensitive zone regulations"] },
+
+      // CENTRAL
+      { id: "bhojtal", name: "Bhojtal (Upper Lake)", location: "Bhopal, Madhya Pradesh", region: "Central", type: "Ramsar Drinking Wetland", source: "buoy", lat: 23.2500, lng: 77.3333, status: "Good", score: 81, readings: { ph: 7.6, do_mgl: 6.4, tds: 340, turbidity: 8.8, temperature: 26.5 }, sampleId: "NODE-MP-BHO-01", date: "2026-11-12 09:50 IST", causes: ["Protected VIP road catchment"] },
+      { id: "lowerlake", name: "Lower Lake (Bhopal)", location: "Bhopal, Madhya Pradesh", region: "Central", type: "Urban Downstream Basin", source: "buoy", lat: 23.2420, lng: 77.4050, status: "Warning", score: 60, readings: { ph: 8.1, do_mgl: 4.4, tds: 640, turbidity: 25.0, temperature: 27.5 }, sampleId: "NODE-MP-BHO-02", date: "2026-11-12 09:35 IST", causes: ["Old city domestic sewage nullahs"] },
+      { id: "sagarlake", name: "Lakha Banjara (Sagar Lake)", location: "Sagar, Madhya Pradesh", region: "Central", type: "Historic Lake", source: "buoy", lat: 23.8380, lng: 78.7420, status: "Critical", score: 46, readings: { ph: 8.5, do_mgl: 3.1, tds: 790, turbidity: 39.0, temperature: 28.0 }, sampleId: "NODE-MP-SAG-01", date: "2026-11-12 09:10 IST", causes: ["City storm sewer discharge"] },
+
+      // EAST
+      { id: "chilika", name: "Chilika Lagoon", location: "Puri / Ganjam, Odisha", region: "East", type: "Ramsar Brackish Lagoon", source: "buoy", lat: 19.7000, lng: 85.3000, status: "Good", score: 84, readings: { ph: 7.8, do_mgl: 6.2, tds: 780, turbidity: 9.0, temperature: 27.5 }, sampleId: "NODE-OD-PUR-01", date: "2026-11-12 09:10 IST", causes: ["Regular tidal exchange with Bay of Bengal"] },
+      { id: "ansupa", name: "Ansupa Lake", location: "Cuttack, Odisha", region: "East", type: "Mahanadi Oxbow Freshwater", source: "buoy", lat: 20.4600, lng: 85.6000, status: "Good", score: 82, readings: { ph: 7.3, do_mgl: 6.6, tds: 260, turbidity: 7.4, temperature: 28.0 }, sampleId: "NODE-OD-CUT-01", date: "2026-11-12 08:50 IST", causes: ["Recent eco-restoration"] },
+      { id: "tampara", name: "Tampara Lake", location: "Chatrapur, Odisha", region: "East", type: "Coastal Freshwater Ramsar", source: "buoy", lat: 19.3500, lng: 85.0000, status: "Good", score: 85, readings: { ph: 7.5, do_mgl: 6.8, tds: 310, turbidity: 6.2, temperature: 27.8 }, sampleId: "NODE-OD-CHA-01", date: "2026-11-12 08:40 IST", causes: ["Clean coastal aquifer"] },
+
+      // NORTHEAST
+      { id: "loktak", name: "Loktak Lake", location: "Bishnupur, Manipur", region: "Northeast", type: "Floating Phumdis Ramsar", source: "buoy", lat: 24.5500, lng: 93.8000, status: "Good", score: 86, readings: { ph: 6.9, do_mgl: 6.4, tds: 145, turbidity: 8.2, temperature: 22.0 }, sampleId: "NODE-MN-BIS-01", date: "2026-11-12 08:30 IST", causes: ["Phumdi vegetation acts as natural nutrient buffer"] },
+      { id: "umiam", name: "Umiam Lake (Barapani)", location: "Shillong, Meghalaya", region: "Northeast", type: "Hydel Hill Reservoir", source: "buoy", lat: 25.6667, lng: 91.9000, status: "Warning", score: 67, readings: { ph: 7.4, do_mgl: 5.4, tds: 380, turbidity: 21.0, temperature: 19.5 }, sampleId: "NODE-ML-SHI-01", date: "2026-11-12 08:45 IST", causes: ["Wah Umkhrah river greywater"] },
+      { id: "deeporbeel", name: "Deepor Beel", location: "Guwahati, Assam", region: "Northeast", type: "Brahmaputra Floodplain Ramsar", source: "buoy", lat: 26.1250, lng: 91.6550, status: "Critical", score: 41, readings: { ph: 8.3, do_mgl: 2.9, tds: 760, turbidity: 42.0, temperature: 25.0 }, sampleId: "NODE-AS-GUW-01", date: "2026-11-12 08:15 IST", causes: ["Boragaon municipal solid waste dump leachate"] },
+      { id: "chandubi", name: "Chandubi Lake", location: "Kamrup, Assam", region: "Northeast", type: "Tectonic Basin", source: "buoy", lat: 25.8800, lng: 91.4300, status: "Good", score: 89, readings: { ph: 7.1, do_mgl: 7.1, tds: 130, turbidity: 5.0, temperature: 23.0 }, sampleId: "NODE-AS-KAM-01", date: "2026-11-12 07:55 IST", causes: ["Garo hills forest catchment"] },
+      { id: "rudrasagar", name: "Rudrasagar Lake", location: "Sepahijala, Tripura", region: "Northeast", type: "Neermahal Palace Ramsar", source: "buoy", lat: 23.5000, lng: 91.3167, status: "Warning", score: 65, readings: { ph: 7.6, do_mgl: 5.1, tds: 420, turbidity: 22.0, temperature: 26.0 }, sampleId: "NODE-TR-SEP-01", date: "2026-11-12 08:05 IST", causes: ["Silt deposition from Kemtali canal"] },
+      { id: "gurudongmar", name: "Gurudongmar Lake", location: "North Sikkim, Sikkim", region: "Northeast", type: "Glacial Lake (5,430m)", source: "buoy", lat: 28.0250, lng: 88.7100, status: "Good", score: 97, readings: { ph: 7.4, do_mgl: 9.4, tds: 85, turbidity: 1.4, temperature: 4.5 }, sampleId: "NODE-SK-GUR-01", date: "2026-11-12 07:15 IST", causes: ["Glacial moraine source"] },
+      { id: "tsomgo", name: "Tsomgo Lake (Changu)", location: "East Sikkim, Sikkim", region: "Northeast", type: "Alpine Glacial Wetland", source: "buoy", lat: 27.3740, lng: 88.7620, status: "Good", score: 91, readings: { ph: 7.3, do_mgl: 8.2, tds: 110, turbidity: 3.2, temperature: 7.0 }, sampleId: "NODE-SK-TSO-01", date: "2026-11-12 07:30 IST", causes: ["Snowmelt feeding; strict plastic ban"] }
+    ];
+
+    const PWD_STATIONS = [
+      { id: "pwd_adyar", name: "PWD Station: Adyar Estuary Basin", location: "Chennai, Tamil Nadu", region: "South", type: "Citizen Sample (IIT Madras)", source: "pwd", lat: 13.0067, lng: 80.2570, status: "Critical", score: 38, qualityClass: "Unacceptable", readings: { ph: 8.6, do_mgl: 2.1, tds: 920, turbidity: 44.0, temperature: 30.0 }, sampleId: "PWD-TN-CHE-4412", date: "2026-10-24", causes: ["Untreated domestic sewage outlet", "Low tidal flushing during neap tide"] },
+      { id: "pwd_noyyal", name: "PWD Station: Singanallur Lake", location: "Coimbatore, Tamil Nadu", region: "South", type: "Citizen Sample (KMCH)", source: "pwd", lat: 10.9980, lng: 77.0260, status: "Warning", score: 58, qualityClass: "Poor", readings: { ph: 8.3, do_mgl: 3.8, tds: 740, turbidity: 26.0, temperature: 28.5 }, sampleId: "PWD-TN-CBE-1092", date: "2026-11-02", causes: ["Textile dyeing residual salts", "Urban storm runoff"] },
+      { id: "pwd_chembaram", name: "PWD Station: Chembarambakkam Intake", location: "Chennai, Tamil Nadu", region: "South", type: "Citizen Sample (ICCW)", source: "pwd", lat: 13.0117, lng: 80.0578, status: "Good", score: 90, qualityClass: "Desirable", readings: { ph: 7.2, do_mgl: 7.1, tds: 220, turbidity: 4.8, temperature: 28.0 }, sampleId: "PWD-TN-CHE-0931", date: "2026-11-05", causes: ["Protected drinking water intake basin"] },
+      { id: "pwd_yamuna", name: "PWD Station: Okhla Barrage Wetland", location: "New Delhi, Delhi NCR", region: "North", type: "Citizen Sample", source: "pwd", lat: 28.5444, lng: 77.3090, status: "Critical", score: 28, qualityClass: "Unacceptable", readings: { ph: 8.9, do_mgl: 1.1, tds: 1180, turbidity: 56.0, temperature: 26.0 }, sampleId: "PWD-DL-DEL-3301", date: "2026-11-01", causes: ["Shahdara drain industrial and domestic discharge"] },
+      { id: "pwd_sabarmati", name: "PWD Station: Chandola Lake Ingress", location: "Ahmedabad, Gujarat", region: "West", type: "Citizen Sample", source: "pwd", lat: 22.9860, lng: 72.5830, status: "Critical", score: 40, qualityClass: "Unacceptable", readings: { ph: 8.7, do_mgl: 2.4, tds: 860, turbidity: 39.0, temperature: 29.0 }, sampleId: "PWD-GJ-AHM-1240", date: "2026-10-28", causes: ["Industrial effluent bypass from Vatva belt"] },
+      { id: "pwd_mula", name: "PWD Station: Khadakwasla Reservoir", location: "Pune, Maharashtra", region: "West", type: "Citizen Sample", source: "pwd", lat: 18.4350, lng: 73.7650, status: "Good", score: 87, qualityClass: "Acceptable", readings: { ph: 7.4, do_mgl: 6.8, tds: 260, turbidity: 6.2, temperature: 25.5 }, sampleId: "PWD-MH-PUN-0482", date: "2026-11-08", causes: ["Western Ghats catchment protection"] },
+      { id: "pwd_rabindra", name: "PWD Station: Rabindra Sarobar Ghat 3", location: "Kolkata, West Bengal", region: "East", type: "Citizen Sample", source: "pwd", lat: 22.5117, lng: 88.3589, status: "Warning", score: 71, qualityClass: "Acceptable", readings: { ph: 7.5, do_mgl: 5.6, tds: 430, turbidity: 14.0, temperature: 28.0 }, sampleId: "PWD-WB-KOL-8812", date: "2026-10-30", causes: ["Micro-algae bloom controlled by municipal aeration"] },
+      { id: "pwd_ashtamudi", name: "PWD Station: Ashtamudi Mangrove Creek", location: "Kollam, Kerala", region: "South", type: "Citizen Sample (TAU)", source: "pwd", lat: 8.9500, lng: 76.6000, status: "Warning", score: 74, qualityClass: "Acceptable", readings: { ph: 7.7, do_mgl: 5.8, tds: 790, turbidity: 12.0, temperature: 28.5 }, sampleId: "PWD-KL-KOL-2104", date: "2026-11-04", causes: ["Coconut retting organics buffered by mangroves"] },
+      { id: "pwd_bellandur_citizen", name: "PWD Station: Bellandur Inflow Point 4", location: "Bengaluru, Karnataka", region: "South", type: "Citizen Watch (Citizen Science)", source: "pwd", lat: 12.9300, lng: 77.6650, status: "Critical", score: 22, qualityClass: "Unacceptable", readings: { ph: 9.1, do_mgl: 1.2, tds: 980, turbidity: 62.0, temperature: 30.0 }, sampleId: "PWD-KA-BLR-8921", date: "2026-11-10", causes: ["Foaming surfactant crest", "High chemical oxygen demand"] },
+      { id: "pwd_kukatpally", name: "PWD Station: Kukatpally Nullah Confluence", location: "Hyderabad, Telangana", region: "South", type: "Citizen Sample", source: "pwd", lat: 17.4320, lng: 78.4680, status: "Critical", score: 31, qualityClass: "Unacceptable", readings: { ph: 8.8, do_mgl: 1.9, tds: 1040, turbidity: 51.0, temperature: 30.5 }, sampleId: "PWD-TS-HYD-5021", date: "2026-11-07", causes: ["Industrial effluent canal ingress into Hussain Sagar"] },
+      { id: "pwd_assi", name: "PWD Station: Assi River Confluence to Ganga", location: "Varanasi, Uttar Pradesh", region: "North", type: "Citizen Sample", source: "pwd", lat: 25.2850, lng: 83.0060, status: "Critical", score: 35, qualityClass: "Unacceptable", readings: { ph: 8.5, do_mgl: 2.3, tds: 910, turbidity: 47.0, temperature: 27.5 }, sampleId: "PWD-UP-VAR-1102", date: "2026-11-06", causes: ["Untreated urban drainage entering riparian corridor"] },
+      { id: "pwd_jalmahal", name: "PWD Station: Man Sagar (Jal Mahal) North", location: "Jaipur, Rajasthan", region: "West", type: "Citizen Sample", source: "pwd", lat: 26.9530, lng: 75.8450, status: "Warning", score: 59, qualityClass: "Poor", readings: { ph: 8.3, do_mgl: 4.2, tds: 690, turbidity: 27.0, temperature: 28.0 }, sampleId: "PWD-RJ-JAI-4401", date: "2026-11-09", causes: ["Brahmapuri and Nagtalai storm drain siltation"] }
+    ];
+
+    const HARDWARE_COMPONENTS = [
+      { id: 1, name: "1. ESP32 Dev Board", status: "ONLINE", desc: "Central microcontroller & LoRa/WiFi telemetry node.", metrics: { "CPU Load": "14.2%", "Free Heap": "198 KB", "RSSI": "-68 dBm", "Uptime": "18d 6h" } },
+      { id: 2, name: "2. NEO-6M GPS Module", status: "LOCKED", desc: "Geospatial coordinate fix & microsecond clock sync.", metrics: { "Satellites": "9 Sats", "HDOP": "0.92", "Fix Time": "34s TTFF", "Drift": "±1.4m" } },
+      { id: 3, name: "3. Galvanic DO Sensor", status: "HEALTHY", desc: "Electrochemical membrane probe measuring dissolved O2.", metrics: { "Output mV": "24.8 mV", "Membrane": "Clean", "Calib Drift": "0.04%", "Electrolyte": "88%" } },
+      { id: 4, name: "4. Optical Turbidity Sensor", status: "DIRT ALERT", desc: "Infrared optical scattering probe for suspended silt.", metrics: { "Transmittance": "62%", "LED Current": "20.4 mA", "Bio-fouling": "Moderate", "Wiper": "Every 4h" } },
+      { id: 5, name: "5. DS18B20 Temp Probe", status: "HEALTHY", desc: "Waterproof stainless steel 1-Wire thermal probe.", metrics: { "Reading": "29.5 °C", "CRC Checks": "100% OK", "Resolution": "12-bit", "Seal Status": "IP68 OK" } },
+      { id: 6, name: "6. PH-4502C pH Module", status: "CALIBRATED", desc: "Glass electrode with signal amplifier board.", metrics: { "Offset": "2.48 V", "Slope": "-59.2 mV/pH", "Impedance": "Normal", "Reference": "KCl Stable" } },
+      { id: 7, name: "7. Analog TDS Meter", status: "ACTIVE", desc: "AC excitation conductivity sensor preventing polarization.", metrics: { "Frequency": "1.0 kHz AC", "Cell K": "K=1.0", "Polarization": "Zero", "Probe Wear": "94%" } },
+      { id: 8, name: "8. Mini Solar Panel", status: "HARVESTING", desc: "Monocrystalline 6V 3.5W panel for off-grid power.", metrics: { "Output Voc": "5.82 V", "Current": "480 mA", "Irradiance": "840 W/m²", "Daily Yield": "14.8 Wh" } },
+      { id: 9, name: "9. TP4056 Charge Controller", status: "CC CHARGING", desc: "Constant-current / constant-voltage lithium charge IC.", metrics: { "Regulated V": "4.18 V", "Charge Rate": "1000 mA", "Thermals": "36.5 °C OK", "Protection": "DW01 Active" } },
+      { id: 10, name: "10. 18650 Li-ion Cells (2P)", status: "88% S.O.C.", desc: "5200mAh dual 18650 battery bank powering night ops.", metrics: { "Voltage": "4.04 V", "Capacity": "4580 mAh", "Cycles": "42 / 500", "Autonomy": "72h Reserve" } }
+    ];
+
+    const ALL_ITEMS = [...IOT_LAKES, ...PWD_STATIONS];
+    let currentItem = ALL_ITEMS[0];
+    let map, trendChartInstance;
+    let iotMarkers = L.layerGroup();
+    let pwdMarkers = L.layerGroup();
+    let activeRegion = 'all';
+
+    const baseLayers = {
+      hybrid: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google Earth Imagery' }),
+      satellite: L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20, attribution: '&copy; Google Earth Imagery' }),
+      dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19, attribution: '&copy; CartoDB' })
+    };
+
+    // User-Standardized Status Colors
+    function getStandardStatusColor(item) {
+      const isLight = (currentTheme === 'light');
+      const val = (item.qualityClass || item.status).toLowerCase();
+
+      if (val === 'good' || val === 'desirable') {
+        return isLight ? '#059669' : '#10B981'; // Forest / Emerald
+      }
+      if (val === 'acceptable') {
+        return isLight ? '#D97706' : '#F59E0B'; // Ochre / Amber
+      }
+      if (val === 'warning' || val === 'poor') {
+        return isLight ? '#EA580C' : '#F97316'; // Burnt Orange / Vibrant Orange
+      }
+      return isLight ? '#DC2626' : '#EF4444'; // Crimson / Coral Red
+    }
+
+    function initMap() {
+      map = L.map('map', { center: [21.5, 78.9], zoom: 5, zoomControl: false, layers: [baseLayers.hybrid] });
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      
+      iotMarkers.addTo(map);
+      pwdMarkers.addTo(map);
+
+      renderMarkers();
+      initChart();
+      updatePanel(currentItem);
+      populateDirectoryTable();
+      populatePwdList();
+      populateHardwareGrid();
+    }
+
+    function setMapBase(type) {
+      Object.values(baseLayers).forEach(l => map.removeLayer(l));
+      baseLayers[type].addTo(map);
+      ['hybrid', 'satellite', 'dark'].forEach(k => {
+        const btn = document.getElementById('btn-base-' + k);
+        if (btn) {
+          if (k === type) {
+            btn.className = "px-2 py-0.5 rounded font-medium btn-brand shadow-sm";
+            btn.style.color = "#FFF";
+          } else {
+            btn.className = "px-2 py-0.5 rounded font-medium themed-card border themed-border";
+            btn.style.color = "var(--text-secondary)";
+          }
+        }
+      });
+    }
+
+    function setTheme(theme) {
+      currentTheme = theme;
+      document.documentElement.className = 'theme-' + theme;
+
+      // Update button highlights
+      ['hydro', 'light', 'eco'].forEach(t => {
+        const btn = document.getElementById('btn-theme-' + t);
+        if (btn) {
+          if (t === theme) {
+            btn.style.backgroundColor = "var(--primary-brand)";
+            btn.style.color = "#FFFFFF";
+          } else {
+            btn.style.backgroundColor = "transparent";
+            btn.style.color = "var(--text-secondary)";
+          }
+        }
+      });
+
+      renderMarkers();
+      updatePanel(currentItem);
+      updateChart(currentItem);
+      populateDirectoryTable();
+      populatePwdList();
+      populateHardwareGrid();
+    }
+
+    function renderMarkers(region = activeRegion, search = '') {
+      iotMarkers.clearLayers();
+      pwdMarkers.clearLayers();
+
+      const showIot = document.getElementById('layerIot').checked;
+      const showPwd = document.getElementById('layerPwd').checked;
+
+      ALL_ITEMS.forEach(item => {
+        if (region !== 'all' && item.region !== region) return;
+        if (search && !item.name.toLowerCase().includes(search.toLowerCase()) && !item.location.toLowerCase().includes(search.toLowerCase())) return;
+
+        const color = getStandardStatusColor(item);
+        const isPwd = item.source === 'pwd';
+
+        if (isPwd && !showPwd) return;
+        if (!isPwd && !showIot) return;
+
+        const marker = L.circleMarker([item.lat, item.lng], {
+          radius: isPwd ? 7 : 9,
+          fillColor: color,
+          color: isPwd ? '#38BDF8' : '#ffffff',
+          weight: isPwd ? 2 : 1.5,
+          opacity: 1,
+          fillOpacity: 0.95
+        });
+
+        marker.bindPopup(`
+          <div style="font-family: Inter, sans-serif; font-size: 12px; padding: 4px;">
+            <div style="font-size: 9px; font-family: 'JetBrains Mono', monospace; text-transform: uppercase; font-weight: bold; color: var(--primary-brand); margin-bottom: 2px;">
+              ${isPwd ? '💧 People’s Water Data (Citizen)' : '🛰️ IoT Buoy Node'}
+            </div>
+            <div style="font-bold; font-size: 13px; margin-bottom: 2px; color: var(--text-primary); font-weight: bold;">${item.name}</div>
+            <div style="font-size: 11px; margin-bottom: 6px; color: var(--text-secondary);">${item.location}</div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; font-family: 'JetBrains Mono', monospace; border-top: 1px solid var(--border-color); padding-top: 4px;">
+              <span>Status: <strong style="color:${color}">${(item.qualityClass || item.status).toUpperCase()}</strong></span>
+              <span>Score: <strong>${item.score}/100</strong></span>
+            </div>
+            <button onclick="selectItem('${item.id}')" style="width: 100%; margin-top: 8px; padding: 4px 8px; border-radius: 6px; background-color: var(--primary-brand); color: #FFF; font-size: 11px; font-weight: 600; border: none; cursor: pointer;">
+              Inspect & Run AI Diagnosis
+            </button>
+          </div>
+        `);
+
+        marker.on('click', () => selectItem(item.id));
+
+        if (isPwd) pwdMarkers.addLayer(marker);
+        else iotMarkers.addLayer(marker);
+      });
+    }
+
+    function toggleLayer() {
+      renderMarkers();
+    }
+
+    function filterByRegion(region) {
+      activeRegion = region;
+      ['all', 'North', 'South', 'West', 'East', 'Northeast', 'Central'].forEach(r => {
+        const btn = document.getElementById('btn-reg-' + r);
+        if (btn) {
+          if (r === region) {
+            btn.className = "px-2 py-0.5 rounded font-bold btn-brand shadow-sm";
+            btn.style.color = "#FFF";
+          } else {
+            btn.className = "px-1.5 py-0.5 rounded font-medium themed-card border themed-border hover:opacity-100";
+            btn.style.color = "var(--text-secondary)";
+          }
+        }
+      });
+      renderMarkers(region);
+    }
+
+    function handleSearch(val) {
+      renderMarkers(activeRegion, val);
+    }
+
+    function selectItem(id) {
+      const item = ALL_ITEMS.find(i => i.id === id);
+      if (!item) return;
+      currentItem = item;
+
+      map.flyTo([item.lat, item.lng], 13, { duration: 1.5 });
+      updatePanel(item);
+      updateChart(item);
+    }
+
+    function updatePanel(item) {
+      document.getElementById('panelLakeName').innerText = item.name;
+      document.getElementById('panelLocation').innerHTML = `<i class="fa-solid fa-location-dot" style="color: var(--primary-brand);"></i> ${item.location}`;
+      document.getElementById('panelScore').innerHTML = `${item.score}<span class="text-xs font-normal" style="color: var(--text-muted);">/100</span>`;
+      
+      const badge = document.getElementById('panelStatusBadge');
+      const sourceBadge = document.getElementById('panelSourceBadge');
+      
+      const color = getStandardStatusColor(item);
+      badge.innerText = (item.qualityClass || item.status).toUpperCase();
+      badge.style.backgroundColor = color + '22';
+      badge.style.color = color;
+      badge.style.borderColor = color + '60';
+      badge.style.borderWidth = '1px';
+
+      sourceBadge.innerText = item.source === 'pwd' ? "People's Water Data" : "IoT Buoy Fleet";
+
+      document.getElementById('panelMetaSource').innerText = item.source === 'pwd' ? "Citizen Observation (peopleswaterdata.org)" : "Physical Solar IoT Buoy";
+      document.getElementById('panelMetaId').innerText = item.sampleId;
+      document.getElementById('panelMetaDate').innerText = item.date;
+
+      const rd = item.readings;
+      document.getElementById('panelDO').innerText = rd.do_mgl + ' mg/L';
+      document.getElementById('panelDO').style.color = rd.do_mgl < 3.0 ? 'var(--status-unacceptable)' : (rd.do_mgl < 5.0 ? 'var(--status-warning)' : 'var(--status-good)');
+      document.getElementById('panelDOMsg').innerText = rd.do_mgl < 3.0 ? 'Critical hypoxia' : (rd.do_mgl < 5.0 ? 'Marginal oxygen' : 'Healthy oxygen');
+      
+      document.getElementById('panelPH').innerText = rd.ph;
+      document.getElementById('panelPH').style.color = (rd.ph < 6.5 || rd.ph > 8.5) ? 'var(--status-warning)' : 'var(--status-good)';
+      document.getElementById('panelPHMsg').innerText = (rd.ph < 6.5 || rd.ph > 8.5) ? 'Outside CPCB safe band' : 'Neutral & compliant';
+
+      document.getElementById('panelTDS').innerText = rd.tds + ' ppm';
+      document.getElementById('panelTDS').style.color = rd.tds > 1000 ? 'var(--status-unacceptable)' : (rd.tds > 500 ? 'var(--status-warning)' : 'var(--status-good)');
+      document.getElementById('panelTDSMsg').innerText = rd.tds > 1000 ? 'Severe dissolved salts' : (rd.tds > 500 ? 'Elevated minerals' : 'Low mineral load');
+
+      document.getElementById('panelTurb').innerText = rd.turbidity + ' NTU';
+      document.getElementById('panelTurb').style.color = rd.turbidity > 25 ? 'var(--status-unacceptable)' : (rd.turbidity > 10 ? 'var(--status-warning)' : 'var(--status-good)');
+      document.getElementById('panelTurbMsg').innerText = rd.turbidity > 25 ? 'High suspended silt' : (rd.turbidity > 10 ? 'Moderate cloudiness' : 'Clear water column');
+
+      document.getElementById('panelTemp').innerText = rd.temperature + ' °C';
+
+      // Reset diagnosis
+      document.getElementById('diagSummary').innerText = `Data from ${item.source === 'pwd' ? "People's Water Data" : "IoT Buoy"}. Trigger n8n for Groq LLM synthesis and local news verification.`;
+      
+      const causesEl = document.getElementById('diagCauses');
+      causesEl.innerHTML = '';
+      (item.causes || ['Catchment baseline evaluation pending']).forEach(c => {
+        const li = document.createElement('li');
+        li.className = "flex items-start gap-1.5";
+        li.innerHTML = `<span style="color: var(--primary-brand); font-weight: bold;">•</span> ${c}`;
+        causesEl.appendChild(li);
+      });
+      document.getElementById('diagNewsWrap').classList.add('hidden');
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('trendChart').getContext('2d');
+      const baseDO = currentItem.readings.do_mgl;
+      const isLight = (currentTheme === 'light');
+      
+      trendChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Today'],
+          datasets: [{
+            label: 'Dissolved Oxygen (DO mg/L)',
+            data: [baseDO + 0.6, baseDO + 0.4, baseDO + 0.2, baseDO, baseDO - 0.2, baseDO - 0.1, baseDO],
+            borderColor: '#0EA5E9',
+            backgroundColor: 'rgba(14, 165, 233, 0.12)',
+            fill: true,
+            tension: 0.35,
+            borderWidth: 2,
+            pointRadius: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              grid: { color: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)' },
+              ticks: { color: isLight ? '#475569' : '#94A3B8', font: { family: 'JetBrains Mono', size: 9 } }
+            },
+            y: {
+              grid: { color: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.08)' },
+              ticks: { color: isLight ? '#475569' : '#94A3B8', font: { family: 'JetBrains Mono', size: 9 } },
+              min: 0,
+              max: 12
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+    }
+
+    function updateChart(item) {
+      if (!trendChartInstance) return;
+      const baseDO = item.readings.do_mgl;
+      const isLight = (currentTheme === 'light');
+
+      trendChartInstance.data.datasets[0].data = [
+        Math.max(0.5, (baseDO + 0.6).toFixed(1)),
+        Math.max(0.5, (baseDO + 0.4).toFixed(1)),
+        Math.max(0.5, (baseDO + 0.2).toFixed(1)),
+        baseDO,
+        Math.max(0.5, (baseDO - 0.2).toFixed(1)),
+        Math.max(0.5, (baseDO - 0.1).toFixed(1)),
+        baseDO
+      ];
+      trendChartInstance.options.scales.x.ticks.color = isLight ? '#475569' : '#94A3B8';
+      trendChartInstance.options.scales.y.ticks.color = isLight ? '#475569' : '#94A3B8';
+      trendChartInstance.update();
+    }
+
+    function populateDirectoryTable() {
+      const tbody = document.getElementById('directoryTableBody');
+      tbody.innerHTML = '';
+
+      ALL_ITEMS.forEach(item => {
+        const color = getStandardStatusColor(item);
+        const tr = document.createElement('tr');
+        tr.className = "hover:opacity-90 transition cursor-pointer";
+        tr.style.backgroundColor = "transparent";
+        tr.onclick = () => { switchTab('map-view'); selectItem(item.id); };
+
+        tr.innerHTML = `
+          <td class="p-3 font-bold flex items-center gap-1.5" style="color: var(--text-primary);">
+            <span>${item.source === 'pwd' ? '💧' : '🛰️'}</span>
+            <span>${item.name}</span>
+          </td>
+          <td class="p-3" style="color: var(--text-secondary);">${item.location}</td>
+          <td class="p-3 text-[11px]" style="color: var(--primary-brand);">${item.type}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold" style="background:${color}22; color:${color}; border:1px solid ${color}60">
+              ${(item.qualityClass || item.status).toUpperCase()}
+            </span>
+          </td>
+          <td class="p-3 font-bold" style="color: var(--text-primary);">${item.score}</td>
+          <td class="p-3" style="color: var(--text-primary);">${item.readings.do_mgl}</td>
+          <td class="p-3" style="color: var(--text-primary);">${item.readings.ph}</td>
+          <td class="p-3" style="color: var(--text-primary);">${item.readings.tds}</td>
+          <td class="p-3 text-right">
+            <button class="px-2 py-1 rounded btn-brand text-[10px] shadow-sm">Inspect</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function populatePwdList() {
+      const container = document.getElementById('pwdSamplesList');
+      container.innerHTML = '';
+
+      PWD_STATIONS.forEach(s => {
+        const color = getStandardStatusColor(s);
+        const card = document.createElement('div');
+        card.className = "p-3.5 rounded-xl border themed-border themed-card shadow hover:border-sky-400 transition cursor-pointer";
+        card.onclick = () => { switchTab('map-view'); selectItem(s.id); };
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2 mb-1.5">
+            <div>
+              <div class="text-[10px] font-mono font-bold" style="color: var(--primary-brand);">${s.sampleId} • ${s.date}</div>
+              <h4 class="text-sm font-bold" style="color: var(--text-primary);">${s.name}</h4>
+              <div class="text-xs" style="color: var(--text-secondary);">${s.location}</div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold" style="background:${color}22; color:${color}; border:1px solid ${color}60">
+              ${s.qualityClass.toUpperCase()}
+            </span>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5 mt-2 themed-subcard p-2 rounded text-[11px] font-mono text-center border themed-border">
+            <div><span class="text-[9px] block" style="color: var(--text-muted);">DO</span><span class="font-bold" style="color: var(--text-primary);">${s.readings.do_mgl}</span></div>
+            <div><span class="text-[9px] block" style="color: var(--text-muted);">pH</span><span class="font-bold" style="color: var(--text-primary);">${s.readings.ph}</span></div>
+            <div><span class="text-[9px] block" style="color: var(--text-muted);">TDS</span><span class="font-bold" style="color: var(--text-primary);">${s.readings.tds}</span></div>
+            <div><span class="text-[9px] block" style="color: var(--text-muted);">Turb</span><span class="font-bold" style="color: var(--text-primary);">${s.readings.turbidity}</span></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function populateHardwareGrid() {
+      const container = document.getElementById('hardwareGrid');
+      if (!container) return;
+      container.innerHTML = '';
+
+      HARDWARE_COMPONENTS.forEach(item => {
+        const isAlert = item.status === 'DIRT ALERT';
+        const card = document.createElement('div');
+        card.className = "p-4 rounded-xl border themed-border themed-card shadow-lg";
+
+        const badgeColor = isAlert ? 'var(--status-warning)' : 'var(--status-good)';
+        
+        let metricsHTML = '';
+        Object.entries(item.metrics).forEach(([k, v]) => {
+          metricsHTML += `
+            <div>
+              <span class="text-[10px] block" style="color: var(--text-muted);">${k}:</span>
+              <span class="font-bold" style="color: var(--text-primary);">${v}</span>
+            </div>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold flex items-center gap-2" style="color: var(--text-primary);">
+              <i class="fa-solid fa-microchip" style="color: var(--primary-brand);"></i> ${item.name}
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold" style="background-color: ${badgeColor}22; color: ${badgeColor}; border: 1px solid ${badgeColor}60;">
+              ${item.status}
+            </span>
+          </div>
+          <p class="text-[11px] mb-3" style="color: var(--text-secondary);">${item.desc}</p>
+          <div class="grid grid-cols-2 gap-2 text-xs font-mono themed-subcard p-2.5 rounded-lg border themed-border">
+            ${metricsHTML}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function rescrapePwd() {
+      const btn = document.getElementById('btnScrapePwd');
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Scraping Firecrawl...`;
+      setTimeout(() => {
+        btn.innerHTML = `<i class="fa-solid fa-check" style="color: var(--status-good);"></i> Scraped 12 Stations`;
+        setTimeout(() => btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i> Refresh via Firecrawl`, 2200);
+      }, 1500);
+    }
+
+    // Trigger n8n Workflow over Live Webhook
+    async function triggerN8nDiagnosis() {
+      const btn = document.getElementById('btnRunDiagnosis');
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>Invoking n8n Groq AI for ${currentItem.name}...</span>`;
+      btn.disabled = true;
+
+      const payload = {
+        lake: currentItem.name,
+        location: currentItem.location,
+        source: currentItem.source,
+        sample_id: currentItem.sampleId,
+        ph: currentItem.readings.ph,
+        temperature: currentItem.readings.temperature,
+        tds: currentItem.readings.tds,
+        turbidity: currentItem.readings.turbidity,
+        do_mgl: currentItem.readings.do_mgl
+      };
+
+      try {
+        const resp = await fetch(N8N_WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) throw new Error("n8n responded with HTTP " + resp.status);
+        const data = await resp.json();
+        renderAiDiagnosis(data);
+      } catch (err) {
+        alert("Failed to connect to n8n webhook: " + err.message);
+      } finally {
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+      }
+    }
+
+    function renderAiDiagnosis(data) {
+      document.getElementById('diagTimestamp').innerText = new Date().toLocaleTimeString();
+      const ai = data.ai_analysis || {};
+
+      if (ai.summary) document.getElementById('diagSummary').innerText = ai.summary;
+
+      if (ai.likely_causes && ai.likely_causes.length > 0) {
+        const causesEl = document.getElementById('diagCauses');
+        causesEl.innerHTML = '';
+        ai.likely_causes.forEach(c => {
+          const li = document.createElement('li');
+          li.className = "flex items-start gap-1.5";
+          li.innerHTML = `<span style="color: var(--primary-brand); font-weight: bold;">•</span> ${c}`;
+          causesEl.appendChild(li);
+        });
+      }
+
+      const rec = ai.recovery_actions || {};
+      if (rec.immediate && rec.immediate[0]) document.getElementById('diagActImm').innerText = rec.immediate[0];
+      if (rec.short_term && rec.short_term[0]) document.getElementById('diagActShort').innerText = rec.short_term[0];
+      if (rec.long_term && rec.long_term[0]) document.getElementById('diagActLong').innerText = rec.long_term[0];
+
+      if (ai.notify && ai.notify.length > 0) {
+        document.getElementById('diagNotify').innerText = ai.notify.join(', ');
+        document.getElementById('diagNotifyWrap').classList.remove('hidden');
+      }
+
+      if (ai.source_notes && ai.source_notes.length > 0) {
+        const list = document.getElementById('diagNewsList');
+        list.innerHTML = '';
+        ai.source_notes.forEach(note => {
+          const li = document.createElement('li');
+          li.innerText = '• ' + note;
+          list.appendChild(li);
+        });
+        document.getElementById('diagNewsWrap').classList.remove('hidden');
+      }
+    }
+
+    function switchTab(tabId) {
+      ['map-view', 'directory-view', 'pwd-view', 'hardware-view'].forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        if (btn) {
+          if (t === tabId) {
+            btn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5 btn-brand shadow";
+            btn.style.color = "#FFF";
+          } else {
+            btn.className = "px-3 py-1.5 rounded-md text-xs font-medium transition flex items-center gap-1.5";
+            btn.style.color = "var(--text-secondary)";
+            btn.style.backgroundColor = "transparent";
+          }
+        }
+      });
+
+      document.getElementById('view-map').classList.toggle('hidden', tabId !== 'map-view');
+      document.getElementById('view-directory').classList.toggle('hidden', tabId !== 'directory-view');
+      document.getElementById('view-pwd').classList.toggle('hidden', tabId !== 'pwd-view');
+      document.getElementById('view-hardware').classList.toggle('hidden', tabId !== 'hardware-view');
+
+      if (tabId === 'map-view' && map) setTimeout(() => map.invalidateSize(), 100);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidePanel').classList.toggle('translate-x-full');
+    }
+
+    window.addEventListener('DOMContentLoaded', initMap);
+  </script>
+</body>
+</html>
